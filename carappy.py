@@ -19,7 +19,6 @@ fuel_type = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'Electric', 'Hybrid']
 engine_size = st.number_input("Engine Size (L)")
 transmission = st.selectbox("Transmission", ['Manual', 'Automatic'])
 color = st.selectbox("Color", ['Red', 'Blue', 'Black', 'White'])
-location = st.selectbox("Location", ['Delhi', 'Mumbai', 'Bangalore'])
 
 input_df = pd.DataFrame([[brand, model, year, mileage, fuel_type, engine_size, transmission, color, location]],
                         columns=['brand', 'model', 'year', 'mileage', 'fuel_type', 'engine_size', 'transmission', 'color', 'location'])
