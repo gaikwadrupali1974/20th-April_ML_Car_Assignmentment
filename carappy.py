@@ -6,31 +6,44 @@ import numpy as np
 with open('xgb_best_model.pkl', 'rb') as file:
     model = pickle.load(file)
 
-st.title("🚗 Car Price Prediction App")
+st.title('Car Price Prediction')
 
-st.markdown("Fill in the car details below to predict the **selling price**.")
+# Input Widgets
+brand = st.selectbox('Brand', df['Brand'].unique())
+model = st.selectbox('Model', df['Model'].unique())
+year = st.slider('Year', int(df['Year'].min()), int(df['Year'].max()), int(df['Year'].mean()))
+engine_size = st.number_input('Engine Size', min_value=0.0, value=2.0)
+fuel_type = st.selectbox('Fuel Type', df['Fuel_Type'].unique())
+transmission = st.selectbox('Transmission', df['Transmission'].unique())
+mileage = st.number_input('Mileage', min_value=0)
+doors = st.slider('Doors', int(df['Doors'].min()), int(df['Doors'].max()), int(df['Doors'].mean()))
+owner_count = st.slider('Owner Count', int(df['Owner_Count'].min()), int(df['Owner_Count'].max()), int(df['Owner_Count'].mean()))
 
-# Example input fields — modify these based on your dataset features 
-year = st.number_input("Year of Purchase", min_value=1990, max_value=2025, value=2015)
-present_price = st.number_input("Present Price (in lakhs)", min_value=0.0, value=5.0)
-kms_driven = st.number_input("Kilometers Driven", min_value=0, value=30000)
-owner = st.selectbox("Number of Previous Owners", [0, 1, 2, 3])
-fuel_type = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'CNG'])
-seller_type = st.selectbox("Seller Type", ['Dealer', 'Individual'])
-transmission = st.selectbox("Transmission Type", ['Manual', 'Automatic'])
 
-# You may need to map categorical values to numbers depending on how the model was trained
-fuel_dict = {'Petrol': 0, 'Diesel': 1, 'CNG': 2}
-seller_dict = {'Dealer': 0, 'Individual': 1}
-transmission_dict = {'Manual': 0, 'Automatic': 1}
+# Prepare Input Features
+input_data = pd.DataFrame({
+    'Brand': [brand],
+    'Model': [model],
+    'Year': [year],
+    'Engine_Size': [engine_size],
+    'Fuel_Type': [fuel_type],
+    'Transmission': [transmission],
+    'Mileage': [mileage],
+    'Doors': [doors],
+    'Owner_Count': [owner_count]
+})
 
-# Assemble features as input array (match training format!)
-input_features = np.array([[
-    year, present_price, kms_driven, owner,
-    fuel_dict[fuel_type], seller_dict[seller_type], transmission_dict[transmission]
-]])
+# Encode Categorical Features
+for col in ['Brand', 'Model', 'Fuel_Type', 'Transmission']:
+    le = LabelEncoder()
+    le.fit(df[col])  # Important: Fit on the original data!
+    input_data[col] = le.transform(input_data[col])
 
-# Prediction
-if st.button("Predict Price"):
-    predicted_price = model.predict(input_features)[0]
-    st.success(f"Estimated Selling Price: ₹ {predicted_price:,.2f} lakhs")
+
+# Predict Price
+if st.button('Predict Price'):
+    try:
+        predicted_price = model.predict(input_data)[0]
+        st.success(f'Predicted Price: ${predicted_price:.2f}')
+    except Exception as e:
+        st.error(f"An error occurred during prediction: {e}")
