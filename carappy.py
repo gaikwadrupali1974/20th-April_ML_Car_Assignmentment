@@ -11,7 +11,7 @@ st.title("🚗 Car Price Prediction App")
 st.markdown("Fill in the car details below to predict the **selling price**.")
 
 # Example input fields — modify these based on your dataset features
-brand = st.selectbox("Brand", ['Toyota', 'Honda', 'Ford'])
+brand = st.selectbox("Brand", ['Toyota', 'Honda', 'Ford','Kia','Audi'])
 model = st.text_input("Model")
 year = st.number_input("Year", min_value=1990, max_value=2025)
 mileage = st.number_input("Mileage")
