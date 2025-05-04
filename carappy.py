@@ -11,13 +11,19 @@ st.title("🚗 Car Price Prediction App")
 st.markdown("Fill in the car details below to predict the **selling price**.")
 
 # Example input fields — modify these based on your dataset features
-year = st.number_input("Year of Purchase", min_value=1990, max_value=2025, value=2015)
-present_price = st.number_input("Present Price (in lakhs)", min_value=0.0, value=5.0)
-kms_driven = st.number_input("Kilometers Driven", min_value=0, value=30000)
-owner = st.selectbox("Number of Previous Owners", [0, 1, 2, 3])
-fuel_type = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'CNG'])
-seller_type = st.selectbox("Seller Type", ['Dealer', 'Individual'])
-transmission = st.selectbox("Transmission Type", ['Manual', 'Automatic'])
+brand = st.selectbox("Brand", ['Toyota', 'Honda', 'Ford'])
+model = st.text_input("Model")
+year = st.number_input("Year", min_value=1990, max_value=2025)
+mileage = st.number_input("Mileage")
+fuel_type = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'Electric', 'Hybrid'])
+engine_size = st.number_input("Engine Size (L)")
+transmission = st.selectbox("Transmission", ['Manual', 'Automatic'])
+color = st.selectbox("Color", ['Red', 'Blue', 'Black', 'White'])
+location = st.selectbox("Location", ['Delhi', 'Mumbai', 'Bangalore'])
+
+input_df = pd.DataFrame([[brand, model, year, mileage, fuel_type, engine_size, transmission, color, location]],
+                        columns=['brand', 'model', 'year', 'mileage', 'fuel_type', 'engine_size', 'transmission', 'color', 'location'])
+
 
 # You may need to map categorical values to numbers depending on how the model was trained
 fuel_dict = {'Petrol': 0, 'Diesel': 1, 'CNG': 2}
@@ -31,6 +37,5 @@ input_features = np.array([[
 ]])
 
 # Prediction
-if st.button("Predict Price"):
-    predicted_price = model.predict(input_features)[0]
-    st.success(f"Estimated Selling Price: ₹ {predicted_price:,.2f} lakhs")
+prediction = model.predict(input_df)
+st.write(f"Predicted car price: ₹{prediction[0]:,.2f}")
