@@ -1,59 +1,41 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import pickle
-from sklearn.preprocessing import LabelEncoder
-
-# Initialize df *outside* the try-except
-df = pd.DataFrame()  # Initialize as an empty DataFrame
-
-# Load the trained XGBoost model
-try:
-    with open('xgb_best_model.pkl', 'rb') as file:
-        model = pickle.load(file)
-except FileNotFoundError:
-    st.error("Model file not found! Please make sure 'xgb_best_model.pkl' is in the same directory.")
-    st.stop()
-
-# Load the original dataset (for unique values in dropdowns)
-# Replace with your actual data loading mechanism (e.g., from CSV, database)
-try:
-    import pymysql
-    conn = pymysql.connect(
-        host='127.0.0.1',
-        user='root',
-        password='Reya@2014',
-        port=3306
-    )
-    query = "SELECT * FROM cars.car_price_dataset"
-    df = pd.read_sql(query, conn)
-    conn.close()
-except Exception as e:  # Catch a broader range of exceptions
-    st.error(f"Failed to connect to the database and load data: {e}. Using fallback data.")
-    #  Minimal fallback data to allow the app to *run* (but dropdowns will be empty)
-    df = pd.DataFrame({
-        'Brand': ['Default'], 'Model': ['Default'], 'Year': [2020],
-        'Engine_Size': [2.0], 'Fuel_Type': ['Default'], 'Transmission': ['Default'],
-        'Mileage': [0], 'Doors': [4], 'Owner_Count': [1]
-    })
-    #  ***IMPORTANT***:  In a real application, replace this with loading from a CSV backup
-    #  or some other reliable source!  Having only "Default" is not useful for prediction.
-
-
-# Streamlit App
 st.title('Car Price Prediction')
 
+# **CRITICAL: Data Type Handling for 'Year'**
+if not df.empty:
+    try:
+        df['Year'] = pd.to_numeric(df['Year'], errors='raise')  # Convert to numeric, raise errors
+        min_year = int(df['Year'].min())
+        max_year = int(df['Year'].max())
+        mean_year = int(df['Year'].mean())
+    except ValueError:
+        st.error("The 'Year' column contains non-numeric values and cannot be used for the slider.")
+        st.stop()  # Stop execution if 'Year' is invalid
+    except TypeError:
+        st.error("The 'Year' column contains incompatible data types for calculations.")
+        st.stop()
+    except Exception as e:
+        st.error(f"An unexpected error occurred while processing the 'Year' column: {e}")
+        st.stop()
+
+else:
+    # Handle the case where df is empty (from fallback or database failure)
+    min_year = 2000
+    max_year = 2025
+    mean_year = 2020
+    st.warning("No data loaded. Using default year range for the slider.")
+
+
 # Input Widgets
-brand = st.selectbox('Brand', df['Brand'].unique())
-model = st.selectbox('Model', df['Model'].unique())
-year = st.slider('Year', int(df['Year'].min()), int(df['Year'].max()), int(df['Year'].mean()))
+brand = st.selectbox('Brand', df['Brand'].unique() if not df.empty else ['Default'])
+model = st.selectbox('Model', df['Model'].unique() if not df.empty else ['Default'])
+year = st.slider('Year', min_year, max_year, mean_year)  # Use calculated or default values
 engine_size = st.number_input('Engine Size', min_value=0.0, value=2.0)
-fuel_type = st.selectbox('Fuel Type', df['Fuel_Type'].unique())
-transmission = st.selectbox('Transmission', df['Transmission'].unique())
+fuel_type = st.selectbox('Fuel Type', df['Fuel_Type'].unique() if not df.empty else ['Default'])
+transmission = st.selectbox('Transmission', df['Transmission'].unique() if not df.empty else ['Default'])
 mileage = st.number_input('Mileage', min_value=0)
-doors = st.slider('Doors', int(df['Doors'].min()), int(df['Doors'].max()), int(df['Doors'].mean()))
-owner_count = st.slider('Owner Count', int(df['Owner_Count'].min()), int(df['Owner_Count'].max()),
-                  int(df['Owner_Count'].mean()))
+doors = st.slider('Doors', 2, 5, 4)  # Provide default values
+owner_count = st.slider('Owner Count', 1, 5, 2)  # Provide default values
+
 
 # Prepare Input Features
 input_data = pd.DataFrame({
@@ -79,5 +61,7 @@ if st.button('Predict Price'):
     try:
         predicted_price = model.predict(input_data)[0]
         st.success(f'Predicted Price: ${predicted_price:.2f}')
+    except Exception as e:
+        st.error(f"An error occurred during prediction: {e}")
     except Exception as e:
         st.error(f"An error occurred during prediction: {e}")
