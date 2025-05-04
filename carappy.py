@@ -1,49 +1,36 @@
 import streamlit as st
-import pandas as pd
 import pickle
+import numpy as np
 
-# Load the trained model (assumes preprocessing is built-in or unnecessary)
-with open("xgb_best_model.pkl", "rb") as file:
+# Load the saved model
+with open('xgb_best_model.pkl', 'rb') as file:
     model = pickle.load(file)
 
 st.title("🚗 Car Price Prediction App")
 
-# User Inputs
-name = st.text_input("Car Name (e.g., Maruti Swift Dzire VDI)")
-year = st.number_input("Year", min_value=1990, max_value=2025, value=2015)
-km_driven = st.number_input("Kilometers Driven", value=50000)
-fuel = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'CNG', 'LPG', 'Electric'])
-seller_type = st.selectbox("Seller Type", ['Individual', 'Dealer', 'Trustmark Dealer'])
-transmission = st.selectbox("Transmission", ['Manual', 'Automatic'])
-owner = st.selectbox("Previous Owners", ['First Owner', 'Second Owner', 'Third Owner', 'Fourth & Above Owner', 'Test Drive Car'])
-mileage = st.number_input("Mileage (kmpl)", value=18.0)
-engine = st.number_input("Engine (CC)", value=1197)
-max_power = st.number_input("Max Power (bhp)", value=82.0)
-seats = st.selectbox("Seats", [2, 4, 5, 6, 7, 8, 9, 10])
+st.markdown("Fill in the car details below to predict the **selling price**.")
 
-# Convert inputs into DataFrame
-input_dict = {
-    'name': name,
-    'year': year,
-    'km_driven': km_driven,
-    'fuel': fuel,
-    'seller_type': seller_type,
-    'transmission': transmission,
-    'owner': owner,
-    'mileage': mileage,
-    'engine': engine,
-    'max_power': max_power,
-    'seats': seats
-}
+# Example input fields — modify these based on your dataset features 
+year = st.number_input("Year of Purchase", min_value=1990, max_value=2025, value=2015)
+present_price = st.number_input("Present Price (in lakhs)", min_value=0.0, value=5.0)
+kms_driven = st.number_input("Kilometers Driven", min_value=0, value=30000)
+owner = st.selectbox("Number of Previous Owners", [0, 1, 2, 3])
+fuel_type = st.selectbox("Fuel Type", ['Petrol', 'Diesel', 'CNG'])
+seller_type = st.selectbox("Seller Type", ['Dealer', 'Individual'])
+transmission = st.selectbox("Transmission Type", ['Manual', 'Automatic'])
 
-input_df = pd.DataFrame([input_dict])
+# You may need to map categorical values to numbers depending on how the model was trained
+fuel_dict = {'Petrol': 0, 'Diesel': 1, 'CNG': 2}
+seller_dict = {'Dealer': 0, 'Individual': 1}
+transmission_dict = {'Manual': 0, 'Automatic': 1}
+
+# Assemble features as input array (match training format!)
+input_features = np.array([[
+    year, present_price, kms_driven, owner,
+    fuel_dict[fuel_type], seller_dict[seller_type], transmission_dict[transmission]
+]])
 
 # Prediction
 if st.button("Predict Price"):
-    try:
-        predicted_price = model.predict(input_df)[0]
-        st.success(f"Estimated Price: ₹ {predicted_price:,.2f}")
-    except Exception as e:
-        st.error(f"Prediction failed: {str(e)}")
-
-
+    predicted_price = model.predict(input_features)[0]
+    st.success(f"Estimated Selling Price: ₹ {predicted_price:,.2f} lakhs")
